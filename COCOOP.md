@@ -14,7 +14,7 @@ You will need both `scripts/cocoop/base2new_train.sh` and `scripts/cocoop/base2n
 
 Below we provide an example on how to evaluate the model on ImageNet.
 
-```bash
+```bash 
 # seed=1
 bash scripts/cocoop/base2new_train.sh imagenet 1
 bash scripts/cocoop/base2new_test.sh imagenet 1

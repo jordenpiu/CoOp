@@ -189,7 +189,7 @@ class CustomCLIP(nn.Module):
         logits = torch.stack(logits)
         
         if self.prompt_learner.training:
-            return F.cross_entropy(logits, label)
+            return F.cross_entropy(logits.float(), label.long())
         
         return logits
 
