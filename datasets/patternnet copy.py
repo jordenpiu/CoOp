@@ -102,11 +102,6 @@ from dassl.data.datasets import DATASET_REGISTRY, Datum, DatasetBase
 from dassl.utils import read_json, write_json, mkdir_if_missing, listdir_nohidden
 
 
-def mkdir_if_missing(directory):
-    """Create directory if it doesn't exist."""
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
 def read_split(filepath, path_prefix):
     def _convert(items):
         out = []
@@ -125,62 +120,14 @@ def read_split(filepath, path_prefix):
     return train, val, test
 
 
-def read_and_split_data(image_dir, p_trn=0.5, p_val=0.2, ignored=None, new_cnames=None):
-    """
-    Splits the dataset into train, validation, and test sets.
-
-    Args:
-        image_dir (str): The directory containing image subfolders by category.
-        p_trn (float): Proportion of the dataset to be used for training.
-        p_val (float): Proportion of the dataset to be used for validation.
-        ignored (list or None): List of categories to ignore.
-        new_cnames (dict or None): Optional mapping of old to new category names.
-
-    Returns:
-        train (list of Datum): Training dataset.
-        val (list of Datum): Validation dataset.
-        test (list of Datum): Testing dataset.
-    """
-    if ignored is None:
-        ignored = []
-
-    # List all subdirectories in image_dir
+def read_and_split_data(image_dir, p_trn=0.5, p_val=0.2, ignored=[], new_cnames=None):
     categories = listdir_nohidden(image_dir)
+    print("categories", categories)
     categories = [c for c in categories if c not in ignored]
     categories.sort()
-
+     
     p_tst = 1 - p_trn - p_val
     print(f"Splitting into {p_trn:.0%} train, {p_val:.0%} val, and {p_tst:.0%} test")
-
-    train = []
-    val = []
-    test = []
-
-    for label, category in enumerate(categories):
-        impath = os.path.join(image_dir, category)
-        images = listdir_nohidden(impath)
-        images = [os.path.join(category, img) for img in images]
-        random.shuffle(images)
-
-        n_total = len(images)
-        n_train = int(p_trn * n_total)
-        n_val = int(p_val * n_total)
-        n_test = n_total - n_train - n_val
-
-        if new_cnames:
-            classname = new_cnames.get(category, category)
-        else:
-            classname = category
-
-        train.extend([(img, label, classname) for img in images[:n_train]])
-        val.extend([(img, label, classname) for img in images[n_train:n_train + n_val]])
-        test.extend([(img, label, classname) for img in images[n_train + n_val:]])
-
-    train = [Datum(impath=os.path.join(image_dir, img), label=label, classname=classname) for img, label, classname in train]
-    val = [Datum(impath=os.path.join(image_dir, img), label=label, classname=classname) for img, label, classname in val]
-    test = [Datum(impath=os.path.join(image_dir, img), label=label, classname=classname) for img, label, classname in test]
-
-    return train, val, test
 
 
 
@@ -267,37 +214,45 @@ class PatternNet(DatasetBase):
         print(root)
         self.dataset_dir = os.path.join(root, self.dataset_dir)
         self.image_dir = os.path.join(self.dataset_dir, "images")
-        self.split_path = os.path.join(self.dataset_dir, "patternnet.json")
-        self.shots_dir = os.path.join(self.dataset_dir, "shots")
-        
-        # Ensure that the shots directory exists
-        mkdir_if_missing(self.shots_dir)
+        self.split_path = os.path.join(
+            self.dataset_dir, "patternnet.json")
+        self.shots_dir = os.path.join(
+            self.dataset_dir, "shots") 
+        # mkdir_if_missing(self.shots_dir)
 
         if os.path.exists(self.split_path):
-            train, val, test = read_split(self.split_path, self.image_dir)
+            train, val, test = read_split(
+                self.split_path, self.image_dir)
         else:
-            train, val, test = read_and_split_data(self.image_dir, ignored=None)
-            save_split(train, val, test, self.split_path, self.image_dir)
+            train, val, test = read_and_split_data(
+                self.image_dir, ignored=None)
+            save_split(
+                train, val, test, self.split_path, self.image_dir)
 
         num_shots = cfg.DATASET.NUM_SHOTS
         if num_shots >= 1:
             seed = cfg.SEED
-            preprocessed = os.path.join(self.shots_dir, f"shot_{num_shots}-seed_{seed}.pkl")
+            preprocessed = os.path.join(
+                self.shots_dir, f"shot_{num_shots}-seed_{seed}.pkl")
 
             if os.path.exists(preprocessed):
-                print(f"Loading preprocessed few-shot data from {preprocessed}")
+                print(
+                    f"Loading preprocessed few-shot data from {preprocessed}")
                 with open(preprocessed, "rb") as file:
                     data = pickle.load(file)
                     train, val = data["train"], data["val"]
             else:
-                train = self.generate_fewshot_dataset(train, num_shots=num_shots)
-                val = self.generate_fewshot_dataset(val, num_shots=min(num_shots, 4))
+                train = self.generate_fewshot_dataset(
+                    train, num_shots=num_shots)
+                val = self.generate_fewshot_dataset(
+                    val, num_shots=min(num_shots, 4))
                 data = {"train": train, "val": val}
                 print(f"Saving preprocessed few-shot data to {preprocessed}")
                 with open(preprocessed, "wb") as file:
                     pickle.dump(data, file, protocol=pickle.HIGHEST_PROTOCOL)
 
         subsample = cfg.DATASET.SUBSAMPLE_CLASSES
-        train, val, test = subsample_classes(train, val, test, subsample=subsample)
+        train, val, test = subsample_classes(
+            train, val, test, subsample=subsample)
 
         super().__init__(train_x=train, val=val, test=test)

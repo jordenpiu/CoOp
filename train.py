@@ -1,5 +1,8 @@
 import argparse
 import torch
+# print(torch.cuda.is_available())  # Should print `True` if CUDA is properly configured
+# print(torch.cuda.device_count())  # Prints the number of detected GPU devices
+# print(torch.cuda.get_device_name(0)) 
 
 from dassl.utils import setup_logger, set_random_seed, collect_env_info
 from dassl.config import get_cfg_default

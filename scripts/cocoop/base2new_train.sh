@@ -3,7 +3,7 @@
 cd ../..
 
 # custom config
-DATA="/home/sunny/CoOp/DATA"
+DATA="/data1/sunny/sunny/dataset/"
 TRAINER=CoCoOp
 # TRAINER=CoOp
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # custom config
-DATA=   "/home/sunny/CoOp/DATA" #"/data1/sunny/sunny/dataset"
+DATA=   "/data1/sunny/sunny/dataset"
 TRAINER=CoOp
 
 DATASET=$1
